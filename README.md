@@ -77,16 +77,14 @@ This will list all processes running on the system that contain the word "python
 
 This will list all processes that are listening on port 53. If the DNS server is running and listening on port 53, you should see an entry for it in the list.
 
-#### Test the DNS server using dig:
+#### Test the DNS server by sending a request to port TCP 53 using dig:
 
-`dig google.com @127.0.0.1`
+By default, most DNS clients send requests over UDP. 
+You can specify to send the request over TCP by using the "-t" option with the "dig" command:
 
-This will send a DNS request for the domain name google.com to the DNS server running on 127.0.0.1. If the DNS server is working correctly, you should see the DNS record for google.com in the output.
+`dig @127.0.0.1 -p 53 -t any google.com`
 
-#### You can also use the nslookup command to test the DNS server:
-
-` nslookup google.com 127.0.0.1 `
-
+This will send a DNS request for the domain name google.com to the DNS server running on 127.0.0.1. 
 If the DNS server is working correctly, you should see the DNS record for google.com in the output.
 
 ---

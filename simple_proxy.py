@@ -21,8 +21,21 @@ def handle_query(client_sock):
     """
     Handle a DNS query from a client
     """
-    query = client_sock.recv(1024)
-    log.debug("Received query from client: %s", query)
+    query = b''
+    while 1:
+        try:
+            data = client_sock.recv(1024)
+            if data:
+                query += data
+            else:
+                log.debug("Received query from client: %s", query)
+                break
+        except socket.error as e:
+            if e.errno == 11:
+                continue
+            else:
+                log.error("Error receiving data from client: %s", e)
+                break
 
     context = ssl.create_default_context()
     server_sock = context.wrap_socket(socket.socket(socket.AF_INET), server_hostname=DNS_SERVER_ADDRESS[0])
@@ -31,8 +44,21 @@ def handle_query(client_sock):
     server_sock.sendall(query)
     log.debug("Sent query to DNS server: %s", query)
 
-    response = server_sock.recv(1024)
-    log.debug("Received response from DNS server: %s", response)
+    response = b''
+    while 1:
+        try:
+            data = server_sock.recv(1024)
+            if data:
+                response += data
+            else:
+                log.debug("Received response from DNS server: %s", response)
+                break
+        except socket.error as e:
+            if e.errno == 11:
+                continue
+            else:
+                log.error("Error receiving data from DNS server: %s", e)
+                break
 
     client_sock.sendall(response)
     log.debug("Sent response to client: %s", response)
@@ -53,4 +79,3 @@ def run_proxy():
 
 if __name__ == '__main__':
     run_proxy()
-
