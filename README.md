@@ -5,6 +5,8 @@ The proxy listens for incoming connections on a TCP socket bound to the localhos
 When it receives a response from the server, it sends the response back to the client and closes the client and server sockets. 
 The proxy then waits for the next incoming connection.
 
+---
+
 ### Code structure
 The code is structured as follows:
 
@@ -16,10 +18,14 @@ The `logging` module is used to create a logger, which will print messages to th
 
 The `log` variable is used to log messages at different levels (debug, info, warning, error, critical) depending on the situation, providing more context and visibility to the code execution.
 
+---
+
 ### Getting the image from Docker
 You can pull the image from Docker hub using the following command:
 
 `docker pull fforfrodo/simple_proxy:latest`
+
+---
 
 ### Configuring the DNS Server
 To configure the DNS server, you will need to modify the simple_proxy.py file.
@@ -35,6 +41,8 @@ Replace "127.0.0.1" with the IP address of the host machine that you want to bin
 `DNS_SERVER_ADDRESS = ("1.1.1.1", 853)`
 This is the IP address that the DNS server will use as the destination for forwarded DNS requests.
 In this case the python DNS server forwards requests to Cloudflare over a TLS connection.
+
+---
 
 ### Running the DNS Server
 There are two ways to run the DNS server:
@@ -53,9 +61,9 @@ Via Docker:
 
 This will build a Docker image based on the Dockerfile and run it in a container. The -p 53:53 flag maps the host machine's port 53 to the container's port 53, so that the DNS server will be accessible on the host machine's port 53.
 
+---
+
 ### Testing the DNS Server
-Testing the DNS Server
-To test the DNS server while it is running, you can use the following commands:
 
 #### Check if the DNS server is running:
 
@@ -81,6 +89,8 @@ This will send a DNS request for the domain name google.com to the DNS server ru
 
 If the DNS server is working correctly, you should see the DNS record for google.com in the output.
 
+---
+
 ## Further considerations
 
 ### If this DNS proxy were to be deployed in an infrastructure, there are several security considerations:
@@ -97,6 +107,8 @@ If the DNS server is working correctly, you should see the DNS record for google
 
 It's important to note that no single solution can mitigate all risks and that a comprehensive security plan that combines multiple layers of protection and regularly testing and monitoring is necessary to secure the proxy.
 
+---
+
 ### To integrate this proxy in a distributed, microservices-oriented, and containerised architecture, the following can be considered:
 
 1. Centralised proxy: A single DNS proxy is deployed in the infrastructure, and all services are configured to use it as their primary DNS resolver. This can be done by pointing the /etc/resolv.conf file to the IP address of the centralised proxy. This approach is simple to set up and easy to manage, but it can become a bottleneck if the proxy is not properly scaled.
@@ -110,6 +122,8 @@ It's important to note that no single solution can mitigate all risks and that a
 In this approach, the centralised proxy would handle the majority of DNS queries, but for specific services that require high availability or high throughput, a sidecar proxy would be deployed alongside the service. This way, the sidecar proxy would handle the queries for that specific service, providing better scalability and fault tolerance for that service, while the centralised proxy would handle the queries for the other services.
 
 It's important to note that the specific implementation details will depend on the specific architecture and technologies being used, and that a thorough testing and monitoring should be done to ensure that the proxy is functioning correctly, and that it is able to handle the expected traffic and load, and that it is able to scale as the architecture grows.
+
+---
 
 ### Future improvements:
 
