@@ -1,41 +1,56 @@
 import socket
 import ssl
+import logging
 
-# Cloudflare DNS server address
 DNS_SERVER_ADDRESS = ("1.1.1.1", 853)
 
-# Create a TCP socket
-sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+logging.basicConfig(level=logging.DEBUG, format='%(asctime)s %(levelname)s %(message)s')
+log = logging.getLogger(__name__)
 
-# Bind the socket to port 53
-sock.bind(("127.0.0.1", 53))
+def create_tcp_socket():
+    """
+    Create a TCP socket and bind it to port 53
+    """
+    sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+    sock.bind(("127.0.0.1", 53))
+    sock.listen(5)
+    log.info("TCP socket created and bound to port 53")
+    return sock
 
-# Set the socket to listen for incoming connections
-sock.listen(5)
-
-while True:
-    # Accept an incoming connection
-    client_sock, client_address = sock.accept()
-
-    # Receive the client's DNS query
+def handle_query(client_sock):
+    """
+    Handle a DNS query from a client
+    """
     query = client_sock.recv(1024)
+    log.debug("Received query from client: %s", query)
 
-    # Create a TLS context
     context = ssl.create_default_context()
-
-    # Connect to the Cloudflare DNS server over TLS
     server_sock = context.wrap_socket(socket.socket(socket.AF_INET), server_hostname=DNS_SERVER_ADDRESS[0])
     server_sock.connect(DNS_SERVER_ADDRESS)
 
-    # Send the query to the Cloudflare DNS server
     server_sock.sendall(query)
+    log.debug("Sent query to DNS server: %s", query)
 
-    # Receive the response from the Cloudflare DNS server
     response = server_sock.recv(1024)
+    log.debug("Received response from DNS server: %s", response)
 
-    # Forward the response back to the client
     client_sock.sendall(response)
+    log.debug("Sent response to client: %s", response)
 
-    # Close the client and server sockets
-    client_sock.close()
     server_sock.close()
+    client_sock.close()
+    log.info("Closed connection with client")
+
+def run_proxy():
+    """
+    Run the DNS proxy
+    """
+    sock = create_tcp_socket()
+    while True:
+        client_sock, client_address = sock.accept()
+        log.info("Accepted connection from client: %s", client_address)
+        handle_query(client_sock)
+
+if __name__ == '__main__':
+    run_proxy()
+

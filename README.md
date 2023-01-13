@@ -1,9 +1,25 @@
 ## Python DNS Server
-This code creates a simple DNS proxy that listens for DNS queries on port 53 and forwards the queries to Cloudflare's DNS server over TLS. When it receives a response from Cloudflare, it sends the response back to the client.
+This code creates a simple DNS proxy that listens for DNS queries on port 53 and forwards the queries to Cloudflare's DNS server over TLS. When it receives a response from Cloudflare, it sends the response back to the client that made the original query. The code continuously listens for incoming queries in a loop.
 
 The proxy listens for incoming connections on a TCP socket bound to the localhost (127.0.0.1) on port 53. When it receives a connection, it receives the client's DNS query and creates a TLS context. It then connects to Cloudflare's DNS server over TLS using the wrapped socket and sends the query to the server. 
 When it receives a response from the server, it sends the response back to the client and closes the client and server sockets. 
 The proxy then waits for the next incoming connection.
+
+### Code structure
+The code is structured as follows:
+
+• `create_tcp_socket()` creates a TCP socket and binds it to port 53
+• `handle_query()`  handles a single DNS query from a client
+• `run_proxy()` creates the TCP socket which listens for incoming connections and handles each query with the handle_query function
+
+The `logging` module is used to create a logger, which will print messages to the console. The logger is configured to print messages of level DEBUG and above, and the format of the messages is specified.
+
+The `log` variable is used to log messages at different levels (debug, info, warning, error, critical) depending on the situation, providing more context and visibility to the code execution.
+
+### Getting the image from Docker
+You can pull the image from Docker hub using the following command:
+
+`docker pull fforfrodo/simple_proxy:latest`
 
 ### Configuring the DNS Server
 To configure the DNS server, you will need to modify the simple_proxy.py file.
@@ -27,11 +43,11 @@ Via the command line:
 
 `sudo python3 simple_proxy.py`
 
-This will start the DNS server and bind it to the localhost (127.0.0.1) on port 53.
+This will start the DNS server with root permissions to bind it to port 53, python must already be installed locally.
 
 Via Docker:
 
-`docker build -t my_dns_server .`
+`docker build -t simple_proxy .`
 
 `$ docker run --network=host -p 53:53 my_dns_server python3 simple_proxy.py`
 
@@ -61,37 +77,46 @@ This will send a DNS request for the domain name google.com to the DNS server ru
 
 #### You can also use the nslookup command to test the DNS server:
 
-
 ` nslookup google.com 127.0.0.1 `
 
 If the DNS server is working correctly, you should see the DNS record for google.com in the output.
 
-### Further Development
-If this DNS proxy were to be deployed in an infrastructure, there are several security concerns that I would raise:
+## Further considerations
 
-1. Data leakage: The DNS proxy may be able to see sensitive information contained in DNS requests and responses, such as the names and IP addresses of domain names being resolved. This information could potentially be leaked if the DNS proxy is not properly secured.
+### If this DNS proxy were to be deployed in an infrastructure, there are several security considerations:
 
-3. Man-in-the-middle attacks: The DNS proxy is a point of intermediation between the client and the destination DNS server. If the DNS proxy is not secure, it could be vulnerable to man-in-the-middle attacks where an attacker could intercept and modify DNS requests and responses.
+1. DNS spoofing attacks: An attacker intercepts or redirects DNS queries to a malicious server, leading to man-in-the-middle attacks or phishing attempts. To mitigate this concern, you should use DNSSEC or DNS-over-TLS/HTTPS to secure the connection between the proxy and the DNS server, and configure the proxy to only accept queries from authorised sources.
 
-3. Denial of service attacks: The DNS proxy could be a target for denial of service attacks, where an attacker could flood the DNS proxy with a large number of requests in order to overwhelm it and make it unavailable to legitimate users.
+2. DNS amplification attacks: The proxy could be used as an amplification vector in a DDoS attack. To mitigate this concern, you should limit the number of queries that the proxy can handle at once and implement rate limiting.
 
-To integrate this solution into a distributed, microservices-oriented, and containerized architecture, I would recommend the following:
+3. Access controls: Unauthorised parties could access and misuse the proxy. To mitigate this concern, you should implement access controls and authentication mechanisms, such as IP whitelisting or a username and password for accessing the proxy.
 
-1. Use a load balancer or reverse proxy to distribute incoming DNS requests to a group of DNS proxy instances, rather than a single instance. This will help to improve availability and scalability.
+4. Insecure configurations: The proxy is not configured with secure settings, such as open ports, weak authentication or unclear access control. To mitigate this concern, you should keep the proxy software updated, and configure it with secure settings and access controls.
 
-2. Use container orchestration tools such as Kubernetes to manage the DNS proxy instances as a group, and to handle the deployment and scaling of the instances as needed.
+5. Lack of monitoring: It may be difficult to detect or respond to security incidents involving the proxy. To mitigate this concern, you should implement monitoring and logging mechanisms, such as syslog or a SIEM, to detect and respond to security incidents in a timely manner.
 
-3. Use service discovery tools such as Consul or etcd to enable the DNS proxy instances to discover each other and communicate with each other.
+It's important to note that no single solution can mitigate all risks and that a comprehensive security plan that combines multiple layers of protection and regularly testing and monitoring is necessary to secure the proxy.
 
-4. Use a centralized logging and monitoring solution to collect logs and metrics from the DNS proxy instances, and to alert on any issues or anomalies.
+### To integrate this proxy in a distributed, microservices-oriented, and containerised architecture, the following can be considered:
 
-#### Future improvements:
+1. Centralised proxy: A single DNS proxy is deployed in the infrastructure, and all services are configured to use it as their primary DNS resolver. This can be done by pointing the /etc/resolv.conf file to the IP address of the centralised proxy. This approach is simple to set up and easy to manage, but it can become a bottleneck if the proxy is not properly scaled.
+
+2. Sidecar proxy: A DNS proxy is deployed as a sidecar container alongside each service. This can be done by creating a pod in Kubernetes that includes both the service and the sidecar proxy. This allows for better scalability and fault tolerance, as each service has its own dedicated proxy. However, it can increase the complexity of the overall system and may require additional resources.
+
+3. Service mesh: A service mesh such as Istio or Linkerd can be used to manage the communication between services, including DNS resolution. This can be done by configuring the service mesh to route DNS queries through the proxy. This approach provides a high level of flexibility and scalability, but it can also be more complex to set up and manage.
+
+4. Hybrid approach: A combination of the above approaches can be used to provide a balance of scalability, fault tolerance, and ease of management. For example, a centralised proxy could be used for most services, but a sidecar proxy could be used for services that require high availability or high throughput. This can be done by routing traffic to a centralised proxy but deploying a sidecar proxy for specific services that need additional scalability or fault tolerance.
+
+In this approach, the centralised proxy would handle the majority of DNS queries, but for specific services that require high availability or high throughput, a sidecar proxy would be deployed alongside the service. This way, the sidecar proxy would handle the queries for that specific service, providing better scalability and fault tolerance for that service, while the centralised proxy would handle the queries for the other services.
+
+It's important to note that the specific implementation details will depend on the specific architecture and technologies being used, and that a thorough testing and monitoring should be done to ensure that the proxy is functioning correctly, and that it is able to handle the expected traffic and load, and that it is able to scale as the architecture grows.
+
+### Future improvements:
+
 • Caching: To improve performance and reduce the load on the destination DNS server, the DNS proxy could implement caching of DNS records. The DNS proxy could store the responses received from the destination DNS server in a cache, and use the cached responses to serve subsequent requests for the same domain name.
 
-• Protocol support: Currently, the DNS proxy only supports DNS over TCP. It would be interesting to add support for DNS over UDP and other protocols such as DoT (DNS over TLS) and DoH (DNS over HTTPS).
+• Configuration: It would be useful to add a configuration system that allows the DNS proxy to be easily configured and customised without requiring code changes. This could include options such as the destination DNS server to use, the cache expiration time, and security settings.
 
-• Security: To improve security, the DNS proxy could implement measures such as encryption of DNS requests and responses, and authentication of clients and servers.
+• Testing: It would be important to add a comprehensive test suite to the DNS proxy to ensure that it is reliable and behaves as expected. This could include unit tests, integration tests, and performance tests.
 
-• Configuration: It would be useful to add a configuration system that allows the DNS proxy to be easily configured and customized without requiring code changes. This could include options such as the destination DNS server to use, the cache expiration time, and security settings.
-
-• Testing: It would be important to add a comprehensive test suite to the DNS proxy project to ensure that it is reliable and behaves as expected. This could include unit tests, integration tests, and performance tests.
+• Self-signed certificates: In some cases, it may be necessary to use self-signed certificates for the proxy instead of certificates issued by a trusted certificate authority. This can be useful in situations where the proxy is not publicly accessible or when the cost of a certificate from a trusted authority is not feasible. To implement self-signed certificates, the proxy would need to generate its own certificate and private key, and the clients setup would need to be configured to trust the proxy's certificate. This can be done by installing the certificate in the client's trust store or by configuring the client to trust the proxy's certificate explicitly.
