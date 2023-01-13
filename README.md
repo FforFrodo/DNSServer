@@ -1,22 +1,25 @@
 ## Python DNS Server
+
 This code creates a simple DNS proxy that listens for DNS queries on port 53 and forwards the queries to Cloudflare's DNS server over TLS. When it receives a response from Cloudflare, it sends the response back to the client that made the original query. The code continuously listens for incoming queries in a loop.
 
 ---
 
 ### Code structure
+
 The code is structured as follows:
 
-• `create_tcp_socket()` creates a TCP socket and binds it to port 53
-• `handle_query()`  handles a single DNS query from a client
-• `run_proxy()` creates the TCP socket which listens for incoming connections and handles each query with the handle_query function
+• `create_tcp_socket()` creates a TCP socket and binds it to port 53  
+• `handle_query()`  handles a single DNS query from a client  
+• `run_proxy()` creates the TCP socket which listens for incoming connections and handles each query with the handle_query function  
 
-The `logging` module is used to create a logger, which will print messages to the console. The logger is configured to print messages of level DEBUG and above, and the format of the messages is specified.
+The `logging` module is used to create a logger, which will print messages to the console. The logger is configured to print messages of level DEBUG and above, and the format of the messages is specified.  
 
-The `log` variable is used to log messages at different levels (debug, info, warning, error, critical) depending on the situation, providing more context and visibility to the code execution.
+The `log` variable is used to log messages at different levels (debug, info, warning, error, critical) depending on the situation, providing more context and visibility to the code execution.  
 
 ---
 
 ### Getting the image from Docker
+
 You can pull the image from Docker hub using the following command:
 
 `docker pull fforfrodo/simple_proxy:latest`
@@ -24,6 +27,7 @@ You can pull the image from Docker hub using the following command:
 ---
 
 ### Configuring the DNS Server
+
 To configure the DNS server, you will need to modify the simple_proxy.py file.
 
 #### Bind the socket to the correct IP address:
@@ -35,12 +39,14 @@ Replace "127.0.0.1" with the IP address of the host machine that you want to bin
 #### Set the destination IP address for forwarded DNS requests:
 
 `DNS_SERVER_ADDRESS = ("1.1.1.1", 853)`
+
 This is the IP address that the DNS server will use as the destination for forwarded DNS requests.
 In this case the python DNS server forwards requests to Cloudflare over a TLS connection.
 
 ---
 
 ### Running the DNS Server
+
 There are two ways to run the DNS server:
 
 1. Via Python:
@@ -73,7 +79,7 @@ This will list all processes running on the system that contain the word "python
 
 This will list all processes that are listening on port 53. If the DNS server is running and listening on port 53, you should see an entry for it in the list.
 
-#### Test the DNS server by sending a request to port TCP 53 using dig:
+#### Testing a DNS query
 
 By default, most DNS clients send requests over UDP. 
 You can specify to send the request over TCP by using the "-t" option with the "dig" command:
@@ -87,7 +93,7 @@ If the DNS server is working correctly, you should see the DNS record for google
 
 ## Further considerations
 
-### If this DNS proxy were to be deployed in an infrastructure, there are several security considerations:
+### Security considerations:
 
 1. DNS spoofing attacks: An attacker intercepts or redirects DNS queries to a malicious server, leading to man-in-the-middle attacks or phishing attempts. To mitigate this concern, you should use DNSSEC or DNS-over-TLS/HTTPS to secure the connection between the proxy and the DNS server, and configure the proxy to only accept queries from authorised sources.
 
@@ -103,7 +109,7 @@ It's important to note that no single solution can mitigate all risks and that a
 
 ---
 
-### To integrate this proxy in a distributed, microservices-oriented, and containerised architecture, the following can be considered:
+### For use in Microserviced Architecture
 
 1. Centralised proxy: A single DNS proxy is deployed in the infrastructure, and all services are configured to use it as their primary DNS resolver. This can be done by pointing the /etc/resolv.conf file to the IP address of the centralised proxy. This approach is simple to set up and easy to manage, but it can become a bottleneck if the proxy is not properly scaled.
 
@@ -119,7 +125,7 @@ It's important to note that the specific implementation details will depend on t
 
 ---
 
-### Futher dvelopments:
+### Futher Development
 
 • Caching: To improve performance and reduce the load on the destination DNS server, the DNS proxy could implement caching of DNS records. The DNS proxy could store the responses received from the destination DNS server in a cache, and use the cached responses to serve subsequent requests for the same domain name.
 
