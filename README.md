@@ -1,10 +1,6 @@
 ## Python DNS Server
 This code creates a simple DNS proxy that listens for DNS queries on port 53 and forwards the queries to Cloudflare's DNS server over TLS. When it receives a response from Cloudflare, it sends the response back to the client that made the original query. The code continuously listens for incoming queries in a loop.
 
-The proxy listens for incoming connections on a TCP socket bound to the localhost (127.0.0.1) on port 53. When it receives a connection, it receives the client's DNS query and creates a TLS context. It then connects to Cloudflare's DNS server over TLS using the wrapped socket and sends the query to the server. 
-When it receives a response from the server, it sends the response back to the client and closes the client and server sockets. 
-The proxy then waits for the next incoming connection.
-
 ---
 
 ### Code structure
@@ -47,13 +43,13 @@ In this case the python DNS server forwards requests to Cloudflare over a TLS co
 ### Running the DNS Server
 There are two ways to run the DNS server:
 
-Via the command line:
+1. Via Python:
 
 `sudo python3 simple_proxy.py`
 
 This will start the DNS server with root permissions to bind it to port 53, python must already be installed locally.
 
-Via Docker:
+2. Via Docker:
 
 `docker build -t simple_proxy .`
 
@@ -123,12 +119,10 @@ It's important to note that the specific implementation details will depend on t
 
 ---
 
-### Future improvements:
+### Futher dvelopments:
 
 • Caching: To improve performance and reduce the load on the destination DNS server, the DNS proxy could implement caching of DNS records. The DNS proxy could store the responses received from the destination DNS server in a cache, and use the cached responses to serve subsequent requests for the same domain name.
 
 • Configuration: It would be useful to add a configuration system that allows the DNS proxy to be easily configured and customised without requiring code changes. This could include options such as the destination DNS server to use, the cache expiration time, and security settings.
 
 • Testing: It would be important to add a comprehensive test suite to the DNS proxy to ensure that it is reliable and behaves as expected. This could include unit tests, integration tests, and performance tests.
-
-• Self-signed certificates: In some cases, it may be necessary to use self-signed certificates for the proxy instead of certificates issued by a trusted certificate authority. This can be useful in situations where the proxy is not publicly accessible or when the cost of a certificate from a trusted authority is not feasible. To implement self-signed certificates, the proxy would need to generate its own certificate and private key, and the clients setup would need to be configured to trust the proxy's certificate. This can be done by installing the certificate in the client's trust store or by configuring the client to trust the proxy's certificate explicitly.
